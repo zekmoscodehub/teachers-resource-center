@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Upload and Manage Files</title>
+    <style>
+        /* Your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ccc;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <form id="uploadForm">
+        <input type="file" accept=".pdf,.docx,.png,.jpeg" id="fileInput">
+        <button type="button" id="uploadButton">Upload File</button>
+    </form>
+  <!-- <td><a href="downloads/${file.id}.pdf" target="_blank">Download</a></td> This is the download link after successful payments-->
+    <table>
+        <thead>
+            <tr>
+                <th>Date Uploaded</th>
+                <th>File Name</th>
+                <th>Download</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody id="fileList">
+        </tbody>
+    </table>
+    <div id="successMessage" style="display: none; color: green;">File uploaded successfully!</div>
+
+    <script type="module">
+        // Import the necessary Firebase SDK modules here
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
+        import { getDatabase, ref, set, get, child, remove } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-database.js";
+
+        // Initialize Firebase with your configuration
+        const firebaseConfig = {
+        apiKey: "AIzaSyB9X4tnHXILvCUJ84wAhOnE74regva9fuU",
+        authDomain: "teacher-resource-center-moses.firebaseapp.com",
+        databaseURL: "https://teacher-resource-center-moses-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "teacher-resource-center-moses",
+        storageBucket: "teacher-resource-center-moses.appspot.com",
+        messagingSenderId: "1015078015163",
+        appId: "1:1015078015163:web:4c8693d5565017db58d99e",
+        measurementId: "G-GG752L16XG"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const database = getDatabase(firebaseApp);
+
+        var fileInput = document.getElementById('fileInput');
+        var uploadButton = document.getElementById('uploadButton');
+        var successMessage = document.getElementById('successMessage');
+        var fileList = document.getElementById('fileList');
+
+        // Function to display uploaded files
+        function displayFiles() {
+            fileList.innerHTML = '';
+
+            get(child(ref(database), 'uploadedFiles')).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const files = snapshot.val();
+                    for (const fileId in files) {
+                        const file = files[fileId];
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${file.dateUploaded}</td>
+                            <td>${file.name}</td>
+                            <td><a href="purchase.html?fileId=${file.id}">Purchase</a></td>
+                            
+                        `;
+                        fileList.appendChild(row);
+                    }
+
+                    // Add event listeners to delete buttons
+                    const deleteButtons = document.querySelectorAll('.deleteButton');
+                    deleteButtons.forEach((button) => {
+                        button.addEventListener('click', function () {
+                            const fileId = this.getAttribute('data-id');
+                            deleteFile(fileId);
+                        });
+                    });
+                }
+            });
+        }
+
+        // Function to delete a file
+        function deleteFile(fileId) {
+            remove(child(ref(database), `uploadedFiles/${fileId}`)).then(() => {
+                displayFiles();
+            }).catch((error) => {
+                console.error('Error deleting file:', error);
+            });
+        }
+
+        uploadButton.addEventListener('click', function () {
+            var file = fileInput.files[0];
+
+            if (file) {
+                // Here you should implement your storage and database logic to upload the file.
+                // Make sure to set up your Firebase project properly.
+
+                // After uploading the file, you should update the Realtime Database.
+                const fileData = {
+                    dateUploaded: new Date().toLocaleString(),
+                    name: file.name,
+                    url: 'URL_OF_THE_UPLOADED_FILE'
+                };
+
+                set(ref(child(ref(database), 'uploadedFiles'), fileData)).then(() => {
+                    displayFiles();
+                    successMessage.style.display = 'block';
+                }).catch((error) => {
+                    console.error('Error uploading file:', error);
+                });
+            }
+        });
+
+        // Display uploaded files on page load
+        displayFiles();
+    </script>
+</body>
+
+</html>
